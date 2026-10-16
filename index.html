@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070914">
+<title>WoW: Forever</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--gold:#f6c45a;--gold2:#ffe2a0;--ink:#f1ebdc;--dim:#c3b8a0;--glass:rgba(10,12,28,.42);--line:rgba(246,196,90,.28)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#070914;overflow:hidden;color:var(--ink);font-family:Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  #c:active{cursor:grabbing}
+  .vignette{position:fixed;inset:0;pointer-events:none;background:
+    radial-gradient(ellipse at 50% 42%,transparent 40%,rgba(3,4,12,.7) 100%),
+    linear-gradient(180deg,rgba(3,4,12,.35) 0%,transparent 22%,transparent 55%,rgba(3,4,12,.55) 100%)}
+  #ui{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:space-between;align-items:center;
+    padding:max(20px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));pointer-events:none}
+  header{text-align:center;opacity:0;transform:translateY(-14px);transition:all 1.6s cubic-bezier(.2,.7,.2,1) .4s}
+  .ready header,.ready .bottom{opacity:1;transform:none}
+  .eyebrow{font:600 .7rem/1 Inter,sans-serif;letter-spacing:.55em;text-transform:uppercase;color:var(--dim);padding-left:.55em}
+  h1{font:900 clamp(2.8rem,10vw,6.4rem)/1 Cinzel,Georgia,serif;letter-spacing:.14em;padding-left:.14em;margin-top:10px;
+    background:linear-gradient(180deg,#fffaf0 0%,#ffe08f 35%,#f0a93a 62%,#8e5313 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 3px 22px rgba(246,170,60,.45))}
+  .sub{display:inline-block;margin-top:8px;font:600 clamp(.82rem,2.4vw,1rem) Cinzel,Georgia,serif;color:var(--gold2);letter-spacing:.1em;padding:4px 14px;border-radius:999px;background:rgba(8,10,24,.4);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .bottom{width:100%;max-width:1120px;display:flex;flex-direction:column;align-items:center;gap:14px;
+    opacity:0;transform:translateY(18px);transition:all 1.6s cubic-bezier(.2,.7,.2,1) .9s}
+  .label{font:600 .7rem Inter;letter-spacing:.42em;text-transform:uppercase;color:var(--gold2);padding:6px 14px 6px calc(14px + .42em);border-radius:999px;background:rgba(8,10,24,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .count{display:flex;gap:clamp(6px,1.8vw,16px);align-items:stretch}
+  .u{min-width:clamp(68px,18vw,130px);text-align:center;padding:12px 6px 10px;border-radius:18px;background:rgba(8,10,24,.5);
+    -webkit-backdrop-filter:blur(12px) saturate(150%);backdrop-filter:blur(12px) saturate(150%);border:1px solid var(--line);
+    box-shadow:0 14px 44px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08);position:relative;overflow:hidden}
+  .u::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.07),transparent 45%);pointer-events:none}
+  .n{display:inline-block;font:700 clamp(2.2rem,9vw,4.6rem)/1 Cinzel,Georgia,serif;font-variant-numeric:tabular-nums;color:#fff;
+    text-shadow:0 0 22px rgba(255,206,120,.55),0 0 2px rgba(255,240,210,.9)}
+  .n.tick{animation:tick .55s cubic-bezier(.2,.8,.2,1)}
+  @keyframes tick{0%{transform:translateY(-10px) scale(1.08);opacity:.2;text-shadow:0 0 40px #ffd27a}100%{transform:none;opacity:1}}
+  .l{margin-top:7px;font:600 .6rem Inter;letter-spacing:.32em;text-transform:uppercase;color:var(--dim);padding-left:.32em}
+  .events{display:flex;gap:10px;width:100%;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 4px;pointer-events:auto;justify-content:center;scrollbar-width:none}
+  .events::-webkit-scrollbar{display:none}
+  .ev{flex:0 0 auto;scroll-snap-align:center;width:208px;padding:11px 14px 11px;border-radius:15px;background:rgba(8,10,24,.55);
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);position:relative;overflow:hidden}
+  .ev .k{display:flex;align-items:center;gap:7px;font:600 .58rem Inter;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
+  .ev .dot{width:7px;height:7px;border-radius:50%;background:#7c88a8}
+  .ev.next{border-color:rgba(246,196,90,.62);box-shadow:0 0 30px rgba(246,190,90,.2)}
+  .ev.next .dot{background:var(--gold);box-shadow:0 0 10px var(--gold);animation:pulse 1.6s infinite}
+  .ev.live .dot{background:#5cf2a6;box-shadow:0 0 10px #5cf2a6;animation:pulse 1.2s infinite}
+  .ev.past{opacity:.48}
+  @keyframes pulse{50%{transform:scale(1.6);opacity:.55}}
+  .ev .t{font:700 1rem Cinzel,Georgia,serif;margin-top:8px;color:#fff}
+  .ev .d{font-size:.74rem;color:var(--dim);margin-top:3px}
+  .ev .c{font:600 1.08rem Inter;font-variant-numeric:tabular-nums;margin-top:9px;color:var(--gold2);letter-spacing:.02em}
+  .ev .t,.ev .d,.ev .c{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ev .note{font-size:.66rem;color:var(--dim);margin-top:4px;line-height:1.35}
+  .ev .bar{position:absolute;left:0;bottom:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold));transition:width 1s linear}
+  .row{display:flex;gap:10px;align-items:center;pointer-events:auto;flex-wrap:wrap;justify-content:center}
+  .btn{font:600 .72rem Inter;letter-spacing:.14em;text-transform:uppercase;color:var(--gold2);background:rgba(246,196,90,.1);border:1px solid var(--line);
+    padding:9px 14px;border-radius:999px;cursor:pointer;text-decoration:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  .btn:hover{background:rgba(246,196,90,.2)}
+  .src{font-size:.62rem;color:rgba(195,184,160,.7);text-align:center}
+  .src a{color:rgba(255,226,160,.8)}
+  .launched .count{display:none}
+  .live-banner{display:none;font:900 clamp(2rem,8vw,4.4rem) Cinzel,Georgia,serif;letter-spacing:.08em;color:#fff;text-shadow:0 0 30px #ffc66b}
+  .launched .live-banner{display:block}
+  #loader{position:fixed;inset:0;display:grid;place-items:center;background:#070914;z-index:5;transition:opacity 1.2s ease}
+  #loader.gone{opacity:0;pointer-events:none}
+  #loader div{width:46px;height:46px;border-radius:50%;border:2px solid rgba(246,196,90,.2);border-top-color:var(--gold);animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (max-width:760px){.events{justify-content:flex-start;padding-left:8px}.ev{width:184px;padding:10px 12px}.ev .note{display:none}.ev .t{font-size:.86rem;letter-spacing:0}.ev .c{font-size:1rem}}
+  @media (max-height:720px) and (min-width:761px){.n{font-size:3.4rem}.u{padding:10px 6px 8px}}
+</style>
+<script type="importmap">
+{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/jsm/"}}
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="vignette"></div>
+<div id="loader"><div></div></div>
+
+<div id="ui">
+  <header>
+    <div class="eyebrow">World of Warcraft</div>
+    <h1>FOREVER</h1>
+    <div class="sub" id="launchLocal">&nbsp;</div>
+  </header>
+
+  <div class="bottom">
+    <div class="label" id="mainLabel">Global launch in</div>
+    <div class="count" id="count">
+      <div class="u"><span class="n" id="cd">--</span><div class="l">Days</div></div>
+      <div class="u"><span class="n" id="ch">--</span><div class="l">Hours</div></div>
+      <div class="u"><span class="n" id="cm">--</span><div class="l">Minutes</div></div>
+      <div class="u"><span class="n" id="cs">--</span><div class="l">Seconds</div></div>
+    </div>
+    <div class="live-banner">Azeroth awaits</div>
+    <div class="events" id="events"></div>
+    <div class="row">
+      <button class="btn" id="ics">Add all to calendar</button>
+      <a class="btn" href="https://worldofwarcraft.blizzard.com/en-us/forever" target="_blank" rel="noopener">Pre-purchase</a>
+    </div>
+    <div class="src">Unofficial fan countdown, not affiliated with Blizzard · Dates from Blizzard's WoW: Forever page and its Oct 15 Stress Test post ·
+      <a href="https://worldofwarcraft.blizzard.com/en-us/news/24302072/join-the-world-of-warcraft-forever-stress-test" target="_blank" rel="noopener">source</a> · drag to look around</div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+/* ------------------------------------------------------------------ dates */
+// All from Blizzard. Launch time is the page's own countdown_to value.
+const EVENTS = [
+  { id:'stress', kind:'Open to all', title:'Stress Test', start:'2026-10-19T21:00:00Z',
+    note:'No sub, beta, or invite needed. May run long or short.', ics:{dur:3*3600} },
+  { id:'beta', kind:'Beta', title:'Beta wraps', start:'2026-10-22T07:00:00Z',
+    note:'Oct 21 is the last full day of beta. End time approximate.', ics:{allDay:'20261021'} },
+  { id:'names', kind:'Pre-purchase', title:'Name Reservation', start:'2026-10-27T07:00:00Z', end:'2026-11-04T08:00:00Z',
+    note:'Oct 27 – Nov 3, first come, first served. Exact open time not announced; counting to midnight PT.', ics:{} },
+  { id:'launch', kind:'Global', title:'Launch', start:'2026-11-04T23:00:00Z', main:true,
+    note:'Per Blizzard\u2019s official countdown.', ics:{dur:4*3600} },
+];
+EVENTS.forEach(e => { e.t = Date.parse(e.start); if (e.end) e.te = Date.parse(e.end); });
+const LAUNCH = EVENTS.find(e => e.main).t;
+const ANNOUNCED = Date.parse('2026-10-15T17:00:00Z');
+
+const fmtLong = t => new Date(t).toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
+const fmtDay = t => new Date(t).toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+document.getElementById('launchLocal').textContent = fmtLong(LAUNCH);
+const pad = n => String(n).padStart(2,'0');
+function split(ms){ const s=Math.max(0,Math.floor(ms/1000)); return {d:Math.floor(s/86400),h:Math.floor(s%86400/3600),m:Math.floor(s%3600/60),s:s%60,total:s}; }
+const short = ms => { const x=split(ms); return (x.d?`${x.d}d `:'')+`${pad(x.h)}:${pad(x.m)}:${pad(x.s)}`; };
+
+const evWrap = document.getElementById('events');
+EVENTS.forEach(e => {
+  const el = document.createElement('div'); el.className='ev'; el.id='ev-'+e.id;
+  el.innerHTML = `<div class="k"><span class="dot"></span>${e.kind}</div><div class="t">${e.title}</div>
+    <div class="d">${e.te ? new Date(e.t).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})+' → '+new Date(e.te-1).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : fmtDay(e.t)}</div>
+    <div class="c">--</div><div class="note">${e.note}</div><div class="bar"></div>`;
+  evWrap.appendChild(el); e.el = el; e.c = el.querySelector('.c'); e.bar = el.querySelector('.bar');
+});
+
+const $=id=>document.getElementById(id); const els = { d:$('cd'), h:$('ch'), m:$('cm'), s:$('cs') }; const mainLabel=$('mainLabel');
+const prev = {};
+function setNum(k,v){ if(prev[k]===v) return; prev[k]=v; const el=els[k]; el.textContent=v; el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick'); }
+
+let launched = false, secondsLeftInMinute = 0;
+function updateUI(){
+  const now = Date.now();
+  const r = split(LAUNCH-now);
+  secondsLeftInMinute = r.s;
+  if (LAUNCH-now <= 0 && !launched){ launched = true; document.body.classList.add('launched'); mainLabel.textContent='World of Warcraft: Forever is live'; onLaunch(); }
+  setNum('d', String(r.d)); setNum('h', pad(r.h)); setNum('m', pad(r.m)); setNum('s', pad(r.s));
+  let nextSet = false;
+  for (const e of EVENTS){
+    e.el.classList.remove('next','live','past');
+    let txt, frac;
+    if (now < e.t){ txt = short(e.t-now); frac = (now-ANNOUNCED)/(e.t-ANNOUNCED);
+      if(!nextSet){ e.el.classList.add('next'); nextSet = true; } }
+    else if (e.te && now < e.te){ txt = 'Open · '+short(e.te-now); e.el.classList.add('live'); frac=(now-e.t)/(e.te-e.t); }
+    else { txt = e.id==='stress' && now-e.t < 6*3600 ? 'Underway' : (e.main?'Live now':'Done'); e.el.classList.add(e.main?'live':'past'); frac=1; }
+    e.c.textContent = txt; e.bar.style.width = (Math.max(0,Math.min(1,frac))*100).toFixed(1)+'%';
+  }
+  document.title = launched ? 'WoW: Forever is live' : `${r.d}d ${pad(r.h)}:${pad(r.m)}:${pad(r.s)} · WoW: Forever`;
+}
+
+/* calendar export */
+document.getElementById('ics').onclick = () => {
+  const z = t => new Date(t).toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+  const L = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//wow-forever-countdown//EN','CALSCALE:GREGORIAN'];
+  for (const e of EVENTS){
+    L.push('BEGIN:VEVENT',`UID:wow-forever-${e.id}@local`,`DTSTAMP:${z(Date.now())}`,`SUMMARY:WoW: Forever \u2013 ${e.title}`);
+    if (e.ics.allDay){ L.push(`DTSTART;VALUE=DATE:${e.ics.allDay}`); }
+    else { L.push(`DTSTART:${z(e.t)}`, `DTEND:${z(e.te || e.t + (e.ics.dur||3600)*1000)}`); }
+    L.push(`DESCRIPTION:${e.note.replace(/,/g,'\\,')}`,'END:VEVENT');
+  }
+  L.push('END:VCALENDAR');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([L.join('\r\n')],{type:'text/calendar'}));
+  a.download = 'wow-forever.ics'; a.click();
+};
+
+/* ------------------------------------------------------------------ 3D */
+const isMobile = matchMedia('(pointer:coarse)').matches || innerWidth < 760;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.5 : 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.9;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x241d45, 0.0042);
+const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.1, 4000);
+function frameShift(){ const w=innerWidth,h=innerHeight; camera.setViewOffset(w,h,0,Math.round(h*(w/h<.9?.16:.2)),w,h); }
+
+function mulberry(a){ return () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+const rand = mulberry(20261104);
+const R = (a,b) => a + rand()*(b-a);
+
+/* noise */
+function h3(a,b,c){ let n=Math.imul(a,73856093)^Math.imul(b,19349663)^Math.imul(c,83492791); n=Math.imul(n^(n>>>13),1274126177); n^=n>>>16; return (n>>>0)/4294967295*2-1; }
+function vnoise(x,y,z){
+  const xi=Math.floor(x), yi=Math.floor(y), zi=Math.floor(z), xf=x-xi, yf=y-yi, zf=z-zi;
+  const u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf), w=zf*zf*(3-2*zf), L=(a,b,t)=>a+(b-a)*t;
+  return L(L(L(h3(xi,yi,zi),h3(xi+1,yi,zi),u),L(h3(xi,yi+1,zi),h3(xi+1,yi+1,zi),u),v),
+           L(L(h3(xi,yi,zi+1),h3(xi+1,yi,zi+1),u),L(h3(xi,yi+1,zi+1),h3(xi+1,yi+1,zi+1),u),v),w);
+}
+const fbm = (x,y,z) => { let s=0,a=.5,f=1; for(let i=0;i<4;i++){ s+=a*vnoise(x*f,y*f,z*f); a*=.5; f*=2.03; } return s; };
+const smooth = (a,b,x) => { const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); };
+
+/* textures */
+function canvasTex(S, draw){ const cv=document.createElement('canvas'); cv.width=cv.height=S; draw(cv.getContext('2d'),S); const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return t; }
+const dotTex = canvasTex(64,(g,S)=>{ const gr=g.createRadialGradient(S/2,S/2,0,S/2,S/2,S/2); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.35,'rgba(255,255,255,.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,S,S); });
+const puffTex = canvasTex(256,(g,S)=>{ const r=mulberry(9); for(let i=0;i<16;i++){ const x=S*(.22+r()*.56), y=S*(.38+r()*.26), rad=S*(.1+r()*.2);
+  const gr=g.createRadialGradient(x,y,0,x,y,rad); gr.addColorStop(0,'rgba(255,255,255,.5)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.beginPath(); g.arc(x,y,rad,0,7); g.fill(); } });
+const runeTex = canvasTex(1024,(g,S)=>{ g.translate(S/2,S/2); g.strokeStyle='#ffe0a0'; g.lineCap='round'; g.lineJoin='round';
+  g.lineWidth=3; [478,438].forEach(r=>{g.beginPath();g.arc(0,0,r,0,7);g.stroke();});
+  g.lineWidth=1.4; g.beginPath(); g.arc(0,0,404,0,7); g.stroke();
+  const N=40; for(let i=0;i<N;i++){ const r=mulberry(i*131+17); g.save(); g.rotate(i/N*Math.PI*2); g.translate(0,-458); g.lineWidth=3.2; g.beginPath();
+    g.moveTo(0,-13); g.lineTo(0,13); const k=2+Math.floor(r()*3);
+    for(let j=0;j<k;j++){ const y=-12+r()*24, dx=(r()<.5?-1:1)*(6+r()*6), dy=(r()<.5?-1:1)*(5+r()*8); g.moveTo(0,y); g.lineTo(dx,y+dy); if(r()<.3) g.lineTo(dx*.2,y+dy*1.6); }
+    g.stroke(); g.restore(); }
+  for(let i=0;i<120;i++){ g.save(); g.rotate(i/120*Math.PI*2); g.lineWidth=i%10?1:3; g.beginPath(); g.moveTo(0,-404); g.lineTo(0,i%10?-394:-380); g.stroke(); g.restore(); } });
+
+/* sky */
+const SUN = new THREE.Vector3(-0.58,0.11,-0.81).normalize();
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(2000,48,24), new THREE.ShaderMaterial({
+  side:THREE.BackSide, depthWrite:false, fog:false, uniforms:{ uSun:{value:SUN} },
+  vertexShader:`varying vec3 vDir; void main(){ vDir=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader:`uniform vec3 uSun; varying vec3 vDir;
+    void main(){ float h=vDir.y; float sd=max(dot(vDir,uSun),0.);
+      vec3 zen=vec3(.008,.012,.045), mid=vec3(.08,.05,.22), hor=vec3(.85,.38,.22), low=vec3(.03,.025,.09);
+      vec3 col=mix(hor,mid,smoothstep(-.02,.28,h)); col=mix(col,zen,smoothstep(.28,.85,h)); col=mix(col,low,smoothstep(0.,-.35,h));
+      col=mix(col,col*vec3(1.25,.95,.85),pow(sd,2.)*.6);
+      col+=vec3(1.,.72,.42)*pow(sd,700.)*18.+vec3(1.,.55,.28)*pow(sd,10.)*.55+vec3(.9,.4,.3)*pow(sd,3.)*.18;
+      gl_FragColor=vec4(col,1.); }`
+})));
+
+/* stars */
+{ const N=isMobile?1100:2200, p=new Float32Array(N*3); for(let i=0;i<N;i++){ const u=R(0,Math.PI*2), y=R(.18,1), rr=Math.sqrt(1-y*y); p.set([Math.cos(u)*rr*1800,y*1800,Math.sin(u)*rr*1800],i*3); }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:1.7,sizeAttenuation:false,color:0xdfe6ff,transparent:true,opacity:.9,fog:false,depthWrite:false}))); }
+
+/* lights */
+scene.add(new THREE.HemisphereLight(0xaec4ff,0x3b2645,1.15));
+const sunL = new THREE.DirectionalLight(0xffbf86,3.0); sunL.position.copy(SUN).multiplyScalar(100); scene.add(sunL);
+const rimL = new THREE.DirectionalLight(0x7c9cff,1.0); rimL.position.set(50,30,70); scene.add(rimL);
+
+/* floating islands */
+const C = h => new THREE.Color(h);
+function islandGeo(seed, seg){
+  const g=new THREE.SphereGeometry(1,seg,Math.floor(seg/2)), pos=g.attributes.position, col=new Float32Array(pos.count*3), v=new THREE.Vector3(), c=new THREE.Color();
+  const gA=C(0x3f8f55), gB=C(0x9cc75a), gC=C(0x2f7a6a), cliff=C(0x9b7357), rA=C(0x4d3f58), rB=C(0x221b31);
+  for(let i=0;i<pos.count;i++){
+    v.fromBufferAttribute(pos,i); const n=fbm(v.x*1.8+seed,v.y*1.8,v.z*1.8+seed*.7);
+    if(v.y>=0){ const r=Math.min(1,Math.hypot(v.x,v.z)); const hills=fbm(v.x*2.6+seed*3,7.3,v.z*2.6)*.2*(1-r*r);
+      v.y=v.y*.1+hills+n*.025; const k=1+n*.14; v.x*=k; v.z*=k;
+      const t=fbm(v.x*4+seed,1,v.z*4)*.5+.5; c.copy(gA).lerp(gB,t).lerp(gC,smooth(.2,.6,fbm(v.x*1.5,3,v.z*1.5+seed)*.5+.5)*.5).lerp(cliff,smooth(.86,1.0,r)); }
+    else { const t=-v.y; v.y=-Math.pow(t,.9)*1.75*(1+.32*n); const k=Math.max(.02,1-Math.pow(t,.62)*.96)*(1+.3*n); v.x*=k; v.z*=k;
+      c.copy(cliff).lerp(rA,Math.min(1,t*2.6)).lerp(rB,Math.min(1,t*t*1.2)); }
+    pos.setXYZ(i,v.x,v.y,v.z); col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b;
+  }
+  g.setAttribute('color',new THREE.BufferAttribute(col,3)); g.computeVertexNormals(); return g;
+}
+const islandMat = new THREE.MeshStandardMaterial({ vertexColors:true, flatShading:true, roughness:.92, metalness:0 });
+const ray = new THREE.Raycaster(), DOWN = new THREE.Vector3(0,-1,0);
+function surfaceY(mesh,x,z){ ray.set(new THREE.Vector3(x,500,z),DOWN); const h=ray.intersectObject(mesh,false)[0]; return h?h.point.y:null; }
+
+const trunkGeo=new THREE.CylinderGeometry(.11,.2,1,6), canopyGeo=new THREE.IcosahedronGeometry(1,0), coneGeo=new THREE.ConeGeometry(1,2.2,7);
+const trunkMat=new THREE.MeshStandardMaterial({color:0x5b3a2a,flatShading:true,roughness:1});
+const canopyMats=[0x3aa477,0x6cc06c,0xe7a548,0xd96f92,0x56bccd,0xf0c86a].map(c=>new THREE.MeshStandardMaterial({color:c,flatShading:true,roughness:.8}));
+function tree(s){
+  const g=new THREE.Group(), t=new THREE.Mesh(trunkGeo,trunkMat); t.scale.set(s,s*1.7,s); t.position.y=s*.85; g.add(t);
+  const m=canopyMats[Math.floor(rand()*canopyMats.length)];
+  if(rand()<.35){ const c=new THREE.Mesh(coneGeo,m); c.scale.setScalar(s*.95); c.position.y=s*2.6; g.add(c); const c2=c.clone(); c2.scale.multiplyScalar(.7); c2.position.y=s*3.6; g.add(c2); }
+  else { const c1=new THREE.Mesh(canopyGeo,m); c1.scale.set(s*1.15,s*.95,s*1.15); c1.position.y=s*2.1; c1.rotation.set(rand()*3,rand()*3,0); g.add(c1);
+    const c2=c1.clone(); c2.scale.multiplyScalar(.68); c2.position.set(s*.45,s*2.75,s*.25); g.add(c2); }
+  g.rotation.y=rand()*6.28; return g;
+}
+const crystalGeo=new THREE.OctahedronGeometry(1,0);
+const crystalMats=[new THREE.MeshStandardMaterial({color:0x8fe8ff,emissive:0x45d0ff,emissiveIntensity:2.2,flatShading:true,roughness:.2}),
+                   new THREE.MeshStandardMaterial({color:0xffe0a0,emissive:0xffb340,emissiveIntensity:2.2,flatShading:true,roughness:.2})];
+
+// main island
+const MAIN_S = 17;
+const main = new THREE.Mesh(islandGeo(1.7, isMobile?72:96), islandMat);
+main.scale.set(MAIN_S, MAIN_S*.78, MAIN_S); scene.add(main); main.updateMatrixWorld(true);
+const centerY = surfaceY(main,0,0) ?? 2;
+for(let i=0;i<34;i++){ const a=R(0,6.28), r=MAIN_S*Math.sqrt(R(.09,.62)); const x=Math.cos(a)*r, z=Math.sin(a)*r, y=surfaceY(main,x,z);
+  if(y==null) continue; const t=tree(R(.75,1.45)); t.position.set(x,y-.15,z); scene.add(t); }
+for(let i=0;i<9;i++){ const a=R(0,6.28), r=MAIN_S*R(.55,.8); const x=Math.cos(a)*r, z=Math.sin(a)*r, y=surfaceY(main,x,z); if(y==null) continue;
+  const c=new THREE.Mesh(crystalGeo,crystalMats[i%2]); c.scale.set(.35,R(.9,1.6),.35); c.position.set(x,y+.5,z); c.rotation.set(R(-.3,.3),R(0,3),R(-.3,.3)); scene.add(c); }
+
+// spire
+const stone=new THREE.MeshStandardMaterial({color:0x8a80a2,flatShading:true,roughness:.85});
+const roof=new THREE.MeshStandardMaterial({color:0x2c5fa8,flatShading:true,roughness:.6,metalness:.2});
+const goldM=new THREE.MeshStandardMaterial({color:0xd9a441,metalness:.95,roughness:.28,emissive:0xff9f30,emissiveIntensity:.5});
+const spire=new THREE.Group(); spire.position.y=centerY-.3; scene.add(spire);
+[[2.6,3.1,2.4,0],[1.65,2.1,4.6,2.4],[1.15,1.4,2.8,7.0]].forEach(([rt,rb,h,y])=>{ const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,8),stone); m.position.y=y+h/2; spire.add(m);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(rt*1.03,.1,6,24),goldM); ring.rotation.x=Math.PI/2; ring.position.y=y+h; spire.add(ring); });
+const cap=new THREE.Mesh(new THREE.ConeGeometry(1.7,3.6,8),roof); cap.position.y=11.6; spire.add(cap);
+for(let i=0;i<4;i++){ const a=i/4*6.28+.4, t=new THREE.Group(); t.position.set(Math.cos(a)*3.4,0,Math.sin(a)*3.4); spire.add(t);
+  const b=new THREE.Mesh(new THREE.CylinderGeometry(.55,.7,3.4,6),stone); b.position.y=1.7; t.add(b); const r=new THREE.Mesh(new THREE.ConeGeometry(.85,1.8,6),roof); r.position.y=4.3; t.add(r); }
+const SPIRE_TOP = spire.position.y + 13.4;
+
+const coreCrystal = new THREE.Mesh(crystalGeo, new THREE.MeshStandardMaterial({color:0xbff3ff,emissive:0x5fdcff,emissiveIntensity:3.2,flatShading:true,roughness:.1}));
+coreCrystal.scale.set(1,1.7,1); coreCrystal.position.y=SPIRE_TOP+1.6; scene.add(coreCrystal);
+const coreLight = new THREE.PointLight(0x7fe6ff, 260, 70, 2); coreLight.position.copy(coreCrystal.position); scene.add(coreLight);
+
+// orbiting islets
+const islets=[];
+for(let i=0;i<8;i++){
+  const grp=new THREE.Group(), s=R(1.8,4.6), m=new THREE.Mesh(islandGeo(i*13.7+3,isMobile?36:48),islandMat);
+  m.scale.set(s,s*.9,s); grp.add(m); const a=i/8*6.28+R(-.3,.3), rad=R(31,52), y=R(-8,14);
+  grp.position.set(Math.cos(a)*rad,y,Math.sin(a)*rad); scene.add(grp); grp.updateMatrixWorld(true);
+  const n=Math.floor(R(1,4)); for(let k=0;k<n;k++){ const aa=R(0,6.28), rr=s*R(0,.55), lx=Math.cos(aa)*rr, lz=Math.sin(aa)*rr;
+    const wy=surfaceY(m,grp.position.x+lx,grp.position.z+lz); if(wy==null) continue;
+    if(rand()<.25){ const c=new THREE.Mesh(crystalGeo,crystalMats[k%2]); c.scale.set(.3,R(.8,1.4),.3); c.position.set(lx,wy-grp.position.y+.4,lz); grp.add(c); }
+    else { const t=tree(R(.5,.95)); t.position.set(lx,wy-grp.position.y-.1,lz); grp.add(t); } }
+  islets.push({grp,y,ph:R(0,6.28),sp:R(.3,.6)});
+}
+
+/* portal */
+const portal = new THREE.Group(); portal.position.y = SPIRE_TOP + 9; scene.add(portal);
+const PR = 5.6;
+const torus = new THREE.Mesh(new THREE.TorusGeometry(PR,.38,18,128), goldM); portal.add(torus);
+const glowRing = new THREE.Mesh(new THREE.TorusGeometry(PR+.42,.06,8,160), new THREE.MeshBasicMaterial({color:new THREE.Color(3.2,2.2,1.1),toneMapped:false})); portal.add(glowRing);
+const innerRing = new THREE.Mesh(new THREE.TorusGeometry(PR-.42,.05,8,160), new THREE.MeshBasicMaterial({color:new THREE.Color(1.2,2.6,3.4),toneMapped:false})); portal.add(innerRing);
+const swirlU = { uTime:{value:0}, uBoost:{value:0} };
+const swirl = new THREE.Mesh(new THREE.CircleGeometry(PR-.3,96), new THREE.ShaderMaterial({
+  uniforms:swirlU, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide,
+  vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader:`uniform float uTime,uBoost; varying vec2 vUv;
+    float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+    void main(){ vec2 p=(vUv-.5)*2.; float r=length(p), a=atan(p.y,p.x);
+      float s1=sin(a*5.+r*9.-uTime*1.6)*.5+.5, s2=sin(a*3.-r*13.+uTime*1.1)*.5+.5, s3=sin(a*9.+r*4.+uTime*.7)*.5+.5;
+      float m=smoothstep(1.,.15,r);
+      vec3 deep=vec3(.05,.12,.55), cyan=vec3(.35,.85,1.3), gold=vec3(1.4,.95,.45);
+      vec3 c=mix(deep,cyan,s1*s2); c=mix(c,gold,pow(s3*s1,3.)*.6);
+      c+=vec3(1.0,.85,.6)*pow(max(0.,1.-r),6.)*(.55+uBoost*4.);
+      float spark=step(.995,hash(floor(p*60.)+floor(uTime*8.)))*m;
+      gl_FragColor=vec4(c*m*(.55+uBoost)+spark*.8, m*(.55+.4*s1)); }`
+})); portal.add(swirl);
+const runes = new THREE.Mesh(new THREE.PlaneGeometry(19,19), new THREE.MeshBasicMaterial({map:runeTex,color:new THREE.Color(1.6,1.15,.6),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,side:THREE.DoubleSide}));
+runes.position.z=-.25; portal.add(runes);
+// 60 second-beads
+const beads = new THREE.InstancedMesh(new THREE.SphereGeometry(.17,10,8), new THREE.MeshBasicMaterial({toneMapped:false}), 60);
+{ const m=new THREE.Matrix4(); for(let i=0;i<60;i++){ const a=Math.PI/2 - i/60*Math.PI*2; m.makeTranslation(Math.cos(a)*(PR+1.05),Math.sin(a)*(PR+1.05),0); beads.setMatrixAt(i,m); beads.setColorAt(i,new THREE.Color(.2,.15,.1)); } }
+portal.add(beads);
+const beadOn=new THREE.Color(2.4,1.6,.7), beadOff=new THREE.Color(.16,.12,.1), beadNow=new THREE.Color(6,5,4);
+let lastBeadSec=-1;
+function updateBeads(sec){ if(sec===lastBeadSec) return; lastBeadSec=sec;
+  for(let i=0;i<60;i++) beads.setColorAt(i, i===sec?beadNow:(i<sec?beadOn:beadOff)); beads.instanceColor.needsUpdate=true; }
+const portalLight = new THREE.PointLight(0xffc77a, 110, 60, 2); portal.add(portalLight);
+
+/* golden motes */
+function softPoints(N, spread, colorVec, sizeBase){
+  const g=new THREE.BufferGeometry(), p=new Float32Array(N*3), ph=new Float32Array(N), sz=new Float32Array(N);
+  for(let i=0;i<N;i++){ const a=R(0,6.28), r=Math.sqrt(R(0,1))*spread.r; p.set([Math.cos(a)*r,R(spread.y0,spread.y1),Math.sin(a)*r],i*3); ph[i]=R(0,1); sz[i]=R(.5,1.5)*sizeBase; }
+  g.setAttribute('position',new THREE.BufferAttribute(p,3)); g.setAttribute('aPhase',new THREE.BufferAttribute(ph,1)); g.setAttribute('aSize',new THREE.BufferAttribute(sz,1));
+  const mat=new THREE.ShaderMaterial({ transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+    uniforms:{uTime:{value:0},uPR:{value:renderer.getPixelRatio()},uCol:{value:colorVec},uRise:{value:spread.rise},uH:{value:spread.y1-spread.y0},uY0:{value:spread.y0},uSpeed:{value:1}},
+    vertexShader:`attribute float aPhase,aSize; uniform float uTime,uPR,uRise,uH,uY0,uSpeed; varying float vA;
+      void main(){ vec3 p=position; float t=uTime*uSpeed;
+        p.y=mod(p.y+t*uRise*(.4+aPhase)+aPhase*uH-uY0, uH)+uY0;
+        p.x+=sin(t*.5+aPhase*6.28)*1.6; p.z+=cos(t*.43+aPhase*6.28)*1.6;
+        vec4 mv=modelViewMatrix*vec4(p,1.); gl_Position=projectionMatrix*mv; gl_PointSize=aSize*uPR*(90./-mv.z);
+        float f=(p.y-uY0)/uH; vA=(.45+.55*sin(uTime*2.3+aPhase*40.))*smoothstep(0.,.15,f)*smoothstep(1.,.8,f); }`,
+    fragmentShader:`uniform vec3 uCol; varying float vA; void main(){ float d=length(gl_PointCoord-.5); float a=smoothstep(.5,.0,d); gl_FragColor=vec4(uCol,a*a*vA); }` });
+  return new THREE.Points(g,mat);
+}
+const motes = softPoints(isMobile?900:1800, {r:46,y0:-14,y1:34,rise:.9}, new THREE.Vector3(2.4,1.7,.8), 1.15); scene.add(motes);
+const wisps = softPoints(isMobile?260:500, {r:9,y0:SPIRE_TOP-2,y1:SPIRE_TOP+18,rise:1.8}, new THREE.Vector3(.9,2.2,3.0), 1.0); scene.add(wisps);
+
+/* waterfall */
+const WF_N = isMobile?520:900, wfAng=.75;
+const wfR=MAIN_S*.86, wfX=Math.cos(wfAng)*wfR, wfZ=Math.sin(wfAng)*wfR;
+const wfY=(surfaceY(main,wfX*.9,wfZ*.9) ?? 1)+.2;
+const wfOut=new THREE.Vector3(Math.cos(wfAng),0,Math.sin(wfAng)), wfTan=new THREE.Vector3(-Math.sin(wfAng),0,Math.cos(wfAng));
+const wfPos=new Float32Array(WF_N*3), wfVel=new Float32Array(WF_N*3);
+function wfSpawn(i){ const j=R(-1.4,1.4); wfPos.set([wfX+wfTan.x*j, wfY+R(-.1,.2), wfZ+wfTan.z*j],i*3); const sp=R(1.6,3.2); wfVel.set([wfOut.x*sp,R(0,.6),wfOut.z*sp],i*3); }
+for(let i=0;i<WF_N;i++){ wfSpawn(i); const steps=Math.floor(R(0,180)); for(let k=0;k<steps;k++){ wfVel[i*3+1]-=9*.016; for(let a=0;a<3;a++) wfPos[i*3+a]+=wfVel[i*3+a]*.016; } }
+const wfGeo=new THREE.BufferGeometry(); wfGeo.setAttribute('position',new THREE.BufferAttribute(wfPos,3));
+const waterfall=new THREE.Points(wfGeo,new THREE.PointsMaterial({map:dotTex,color:new THREE.Color(1.1,1.5,2.0),size:.75,transparent:true,opacity:.75,depthWrite:false,blending:THREE.AdditiveBlending}));
+scene.add(waterfall);
+// little pool at the lip
+{ const pool=new THREE.Mesh(new THREE.CircleGeometry(2.4,24),new THREE.MeshStandardMaterial({color:0x4fc3ff,emissive:0x1a6aa0,emissiveIntensity:.8,roughness:.1,metalness:.3}));
+  pool.rotation.x=-Math.PI/2; pool.position.set(wfX*.86,wfY-.05,wfZ*.86); scene.add(pool); }
+
+/* clouds */
+const clouds = new THREE.Group(); scene.add(clouds);
+const cloudMats=[0xffd8c4,0xf2b9b0,0xb7a6e0,0x8f86c4].map(c=>new THREE.SpriteMaterial({map:puffTex,color:c,transparent:true,opacity:.62,depthWrite:false}));
+for(let i=0;i<(isMobile?55:95);i++){ const sp=new THREE.Sprite(cloudMats[Math.floor(rand()*4)]); const a=R(0,6.28), r=R(14,190), s=R(22,58);
+  sp.position.set(Math.cos(a)*r,R(-30,-16),Math.sin(a)*r); sp.scale.set(s,s*.55,1); clouds.add(sp); }
+for(let i=0;i<(isMobile?14:26);i++){ const sp=new THREE.Sprite(cloudMats[Math.floor(rand()*2)]); const a=R(0,6.28), r=R(110,260), s=R(40,90);
+  sp.position.set(Math.cos(a)*r,R(18,70),Math.sin(a)*r); sp.scale.set(s,s*.4,1); sp.material=sp.material.clone(); sp.material.opacity=.35; clouds.add(sp); }
+
+/* launch burst */
+const BN=1600, bPos=new Float32Array(BN*3), bVel=new Float32Array(BN*3);
+const burstGeo=new THREE.BufferGeometry(); burstGeo.setAttribute('position',new THREE.BufferAttribute(bPos,3));
+const burst=new THREE.Points(burstGeo,new THREE.PointsMaterial({map:dotTex,color:new THREE.Color(3,2.2,1),size:.9,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));
+scene.add(burst); let burstT=-1;
+function onLaunch(){ const c=portal.position; for(let i=0;i<BN;i++){ bPos.set([c.x,c.y,c.z],i*3); const v=new THREE.Vector3(R(-1,1),R(-1,1),R(-1,1)).normalize().multiplyScalar(R(8,32)); bVel.set([v.x,v.y,v.z],i*3); } burstT=0; }
+
+/* post */
+frameShift(); camera.updateProjectionMatrix();
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene,camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*.5,innerHeight*.5), .62, .5, .88); composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+/* camera + input */
+let drag=0, dragV=0, px=0, py=0, tpx=0, tpy=0, down=null;
+canvas.addEventListener('pointerdown',e=>{ down={x:e.clientX}; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove',e=>{ tpx=e.clientX/innerWidth*2-1; tpy=e.clientY/innerHeight*2-1; if(down){ dragV=(e.clientX-down.x)*-.006; drag+=dragV; down.x=e.clientX; } });
+addEventListener('pointerup',()=>down=null);
+function resize(){ const w=innerWidth,h=innerHeight; camera.aspect=w/h; frameShift(); camera.updateProjectionMatrix(); renderer.setSize(w,h); composer.setSize(w,h); bloom.resolution.set(w*.5,h*.5); }
+addEventListener('resize',resize);
+
+const clock = new THREE.Clock(); const tmp=new THREE.Vector3();
+let lastSec=-1;
+function frame(){
+  const dt=Math.min(clock.getDelta(),.05), t=clock.elapsedTime, k=reduce?.3:1;
+  const sec=Math.floor(Date.now()/1000); if(sec!==lastSec){ lastSec=sec; updateUI(); }
+  updateBeads(launched?59:59-secondsLeftInMinute);
+
+  // camera
+  px+=(tpx-px)*.04; py+=(tpy-py)*.04; if(!down){ dragV*=.94; drag+=dragV; }
+  const portrait=camera.aspect<.9, intro=1-Math.pow(1-Math.min(t/5.5,1),3);
+  const dist=(portrait?92:60)*(1+(1-intro)*1.1), lookY=portrait?SPIRE_TOP-6:SPIRE_TOP-5;
+  const ang=-2.15+t*.03*k+drag+px*.18;
+  camera.position.set(Math.cos(ang)*dist, lookY+9+(1-intro)*55-py*4, Math.sin(ang)*dist);
+  camera.lookAt(0,lookY,0);
+
+  // portal faces camera
+  tmp.set(camera.position.x,portal.position.y,camera.position.z); portal.lookAt(tmp);
+  portal.position.y=SPIRE_TOP+9+Math.sin(t*.8)*.35;
+  swirlU.uTime.value=t*k; runes.rotation.z=-t*.08*k; innerRing.rotation.z=t*.4;
+  if(launched) swirlU.uBoost.value=Math.min(1,swirlU.uBoost.value+dt*.5);
+  const pulse=1+Math.sin(t*2.2)*.06; glowRing.scale.setScalar(pulse);
+
+  coreCrystal.rotation.y=t*.9*k; coreCrystal.position.y=SPIRE_TOP+1.6+Math.sin(t*1.3)*.4; coreLight.intensity=240+Math.sin(t*3)*40;
+  islets.forEach((o,i)=>{ o.grp.position.y=o.y+Math.sin(t*o.sp+o.ph)*1.1; o.grp.rotation.y=t*.03*(i%2?1:-1); });
+  clouds.rotation.y=t*.006*k;
+  motes.material.uniforms.uTime.value=t; wisps.material.uniforms.uTime.value=t;
+  if(launched){ motes.material.uniforms.uSpeed.value=2.2; }
+
+  // waterfall
+  for(let i=0;i<WF_N;i++){ wfVel[i*3+1]-=9*dt; wfPos[i*3]+=wfVel[i*3]*dt; wfPos[i*3+1]+=wfVel[i*3+1]*dt; wfPos[i*3+2]+=wfVel[i*3+2]*dt; if(wfPos[i*3+1]<wfY-48) wfSpawn(i); }
+  wfGeo.attributes.position.needsUpdate=true;
+
+  if(burstT>=0){ burstT+=dt; burst.material.opacity=Math.max(0,1-burstT/5);
+    for(let i=0;i<BN;i++){ for(let a=0;a<3;a++){ bVel[i*3+a]*=.985; bPos[i*3+a]+=bVel[i*3+a]*dt; } bVel[i*3+1]-=2*dt; }
+    burstGeo.attributes.position.needsUpdate=true; if(burstT>5){ burstT=-1; } }
+
+  composer.render();
+  requestAnimationFrame(frame);
+}
+updateUI();
+requestAnimationFrame(()=>{ document.getElementById('loader').classList.add('gone'); document.body.classList.add('ready'); });
+frame();
+</script>
+</body>
+</html>
